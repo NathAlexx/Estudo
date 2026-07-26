@@ -127,6 +127,9 @@ export default function TasksSection({
     return true;
   });
 
+  const pendingCount = tasks.filter((t) => !t.completed).length;
+  const completedCount = tasks.filter((t) => t.completed).length;
+  const dueTodayCount = tasks.filter((t) => !t.completed && t.dueDate === today).length;
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
   const today = new Date().toISOString().slice(0, 10);
 
@@ -170,7 +173,16 @@ export default function TasksSection({
         </Card>
       )}
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-300">
+          <span className="font-semibold text-white">{pendingCount}</span> pendentes
+        </div>
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-300">
+          <span className="font-semibold text-white">{completedCount}</span> concluídas
+        </div>
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-300">
+          <span className="font-semibold text-white">{dueTodayCount}</span> para hoje
+        </div>
         {(["pending", "completed", "all"] as Filter[]).map((f) => (
           <button
             key={f}
