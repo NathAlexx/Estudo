@@ -234,35 +234,35 @@ select:-webkit-autofill:focus {
   position: absolute;
   pointer-events: none;
   border-radius: 9999px;
-  filter: blur(70px);
-  opacity: 0.32;
-  animation: drift 10s ease-in-out infinite alternate;
+  filter: blur(50px);
+  opacity: 0.7;
+  animation: drift 4s ease-in-out infinite alternate;
 }
 
 .aurora-orb-1 {
   top: -10rem;
   left: -4rem;
-  height: 20rem;
-  width: 20rem;
-  background: rgba(99, 102, 241, 0.4);
+  height: 28rem;
+  width: 28rem;
+  background: rgba(99, 102, 241, 0.6);
 }
 
 .aurora-orb-2 {
   top: 2rem;
   right: -5rem;
-  height: 18rem;
-  width: 18rem;
-  background: rgba(34, 211, 238, 0.26);
-  animation-duration: 13s;
+  height: 24rem;
+  width: 24rem;
+  background: rgba(34, 211, 238, 0.5);
+  animation-duration: 5s;
 }
 
 .aurora-orb-3 {
   bottom: 3rem;
   left: 10%;
-  height: 14rem;
-  width: 14rem;
-  background: rgba(244, 114, 182, 0.2);
-  animation-duration: 11s;
+  height: 20rem;
+  width: 20rem;
+  background: rgba(244, 114, 182, 0.45);
+  animation-duration: 6s;
 }
 
 .text-gradient {
