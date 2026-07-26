@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import { EMOJI_CHOICES, SUBJECT_COLORS, type Subject } from "@/lib/types";
 import { Button, Card, Input, SectionHeader } from "@/components/ui";
 import EmptyState from "@/components/EmptyState";
-import { SkeletonList } from "@/components/Skeleton";
 import { useToast } from "@/hooks/useToast";
 
 export default function SubjectsSection({
@@ -22,9 +21,14 @@ export default function SubjectsSection({
   const [emoji, setEmoji] = useState(EMOJI_CHOICES[0]);
   const [color, setColor] = useState(SUBJECT_COLORS[0]);
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmoji, setEditEmoji] = useState(EMOJI_CHOICES[0]);
+  const [editColor, setEditColor] = useState(SUBJECT_COLORS[0]);
+  const [editBusy, setEditBusy] = useState(false);
   const { addToast } = useToast();
 
-  async function createSubject(e: React.FormEvent) {
+  async function createSubject(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
@@ -38,6 +42,33 @@ export default function SubjectsSection({
       addToast("Erro ao salvar matéria", "error");
     } finally {
       setBusy(false);
+    }
+  }
+
+  function startEdit(subject: Subject) {
+    setEditingId(subject.id);
+    setEditName(subject.name);
+    setEditEmoji(subject.emoji);
+    setEditColor(subject.colorHex);
+  }
+
+  async function updateSubject(e: FormEvent, id: number) {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    setEditBusy(true);
+    try {
+      await api.patch(`/api/subjects/${id}`, {
+        name: editName.trim(),
+        emoji: editEmoji,
+        colorHex: editColor,
+      });
+      setEditingId(null);
+      addToast("Matéria atualizada!", "success");
+      onChange();
+    } catch {
+      addToast("Erro ao atualizar matéria", "error");
+    } finally {
+      setEditBusy(false);
     }
   }
 
@@ -119,23 +150,73 @@ export default function SubjectsSection({
       ) : (
         <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {subjects.map((s) => (
-            <Card key={s.id} className="hover-lift flex items-center justify-between animate-fade-in-up">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
-                  style={{ backgroundColor: `${s.colorHex}22` }}
-                >
-                  {s.emoji}
+            <Card key={s.id} className="hover-lift animate-fade-in-up">
+              {editingId === s.id ? (
+                <form onSubmit={(e) => updateSubject(e, s.id)} className="space-y-3">
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nome da matéria" />
+                  <div className="flex flex-wrap gap-2">
+                    {EMOJI_CHOICES.map((em) => (
+                      <button
+                        type="button"
+                        key={em}
+                        onClick={() => setEditEmoji(em)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-lg border text-lg transition ${
+                          editEmoji === em ? "border-indigo-400 bg-indigo-500/20" : "border-white/10 bg-white/5"
+                        }`}
+                      >
+                        {em}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {SUBJECT_COLORS.map((c) => (
+                      <button
+                        type="button"
+                        key={c}
+                        onClick={() => setEditColor(c)}
+                        className={`h-8 w-8 rounded-full border-2 transition ${
+                          editColor === c ? "scale-110 border-white" : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={editBusy}>{editBusy ? "Salvando..." : "Salvar"}</Button>
+                    <Button type="button" variant="ghost" onClick={() => setEditingId(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
+                      style={{ backgroundColor: `${s.colorHex}22` }}
+                    >
+                      {s.emoji}
+                    </div>
+                    <span className="font-medium text-slate-200">{s.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => startEdit(s)}
+                      className="rounded-lg p-2 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                      title="Editar"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => removeSubject(s.id)}
+                      className="rounded-lg p-2 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400"
+                      title="Remover"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                <span className="font-medium text-slate-200">{s.name}</span>
-              </div>
-              <button
-                onClick={() => removeSubject(s.id)}
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400"
-                title="Remover"
-              >
-                🗑️
-              </button>
+              )}
             </Card>
           ))}
         </div>

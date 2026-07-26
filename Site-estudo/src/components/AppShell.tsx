@@ -37,18 +37,20 @@ export default function AppShell() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    api.get<Profile[]>("/api/profiles").then((rows) => {
-      setProfiles(rows);
-      setReady(true);
-      if (!profileParam) {
-        const stored = localStorage.getItem("studyorbit:profileId");
-        if (stored) {
-          router.replace(`/painel?profile=${stored}`);
-        } else if (rows.length > 0) {
-          router.replace(`/painel?profile=${rows[0].id}`);
+    api.get<Profile[]>("/api/profiles")
+      .then((rows) => {
+        setProfiles(rows);
+        setReady(true);
+        if (!profileParam) {
+          const stored = localStorage.getItem("studyorbit:profileId");
+          if (stored) {
+            router.replace(`/painel?profile=${stored}`);
+          } else if (rows.length > 0) {
+            router.replace(`/painel?profile=${rows[0].id}`);
+          }
         }
-      }
-    });
+      })
+      .catch(() => setReady(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -74,13 +76,28 @@ export default function AppShell() {
     router.push(`/painel?profile=${id}`);
   }
 
+  if (!ready) {
+    return (
+      <div className="grid min-h-screen place-items-center px-6 text-center">
+        <div className="glass-card rounded-3xl px-8 py-10">
+          <div className="mx-auto orbit-loader" />
+          <p className="mt-5 text-sm font-medium uppercase tracking-[0.28em] text-slate-400">
+            Carregando painel
+          </p>
+          <p className="mt-2 text-slate-300">Preparando seu espaço de estudo...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (ready && profiles.length === 0) {
     return (
       <div className="grid min-h-screen place-items-center px-6 text-center">
-        <div>
-          <p className="text-4xl">📚</p>
-          <p className="mt-4 text-slate-300">Nenhum perfil encontrado.</p>
-          <a href="/" className="mt-4 inline-block rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white">
+        <div className="glass-card rounded-3xl px-8 py-10">
+          <p className="text-4xl">🪐</p>
+          <p className="mt-4 text-lg font-semibold text-white">Nenhum perfil encontrado.</p>
+          <p className="mt-2 text-sm text-slate-400">Crie o primeiro perfil para começar a organizar tudo.</p>
+          <a href="/" className="mt-5 inline-block rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-semibold text-white">
             Criar meu primeiro perfil
           </a>
         </div>
@@ -89,7 +106,14 @@ export default function AppShell() {
   }
 
   if (!profile) {
-    return <div className="grid min-h-screen place-items-center text-slate-400">Carregando painel...</div>;
+    return (
+      <div className="grid min-h-screen place-items-center px-6 text-center">
+        <div className="glass-card rounded-3xl px-8 py-10">
+          <div className="mx-auto orbit-loader" />
+          <p className="mt-5 text-slate-300">Ajustando o painel para o perfil selecionado...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

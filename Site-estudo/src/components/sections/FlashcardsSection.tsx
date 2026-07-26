@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import type { Deck, Flashcard, Subject } from "@/lib/types";
 import { Button, Card, Input, SectionHeader, Select, Textarea } from "@/components/ui";
@@ -21,19 +21,26 @@ export default function FlashcardsSection({
   const [deckName, setDeckName] = useState("");
   const [deckSubjectId, setDeckSubjectId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingDeckId, setEditingDeckId] = useState<number | null>(null);
+  const [editDeckName, setEditDeckName] = useState("");
+  const [editDeckSubjectId, setEditDeckSubjectId] = useState("");
+  const [editDeckBusy, setEditDeckBusy] = useState(false);
   const { addToast } = useToast();
 
   function loadDecks() {
     setLoading(true);
-    api.get<Deck[]>(`/api/decks?profileId=${profileId}`).then((rows) => {
-      setDecks(rows);
-      setActiveDeck((prev) => (prev ? rows.find((d) => d.id === prev.id) ?? null : null));
-    }).finally(() => setLoading(false));
+    api
+      .get<Deck[]>(`/api/decks?profileId=${profileId}`)
+      .then((rows) => {
+        setDecks(rows);
+        setActiveDeck((prev) => (prev ? rows.find((d) => d.id === prev.id) ?? null : null));
+      })
+      .finally(() => setLoading(false));
   }
 
   useEffect(loadDecks, [profileId]);
 
-  async function createDeck(e: React.FormEvent) {
+  async function createDeck(e: FormEvent) {
     e.preventDefault();
     if (!deckName.trim()) return;
     try {
@@ -45,6 +52,31 @@ export default function FlashcardsSection({
       loadDecks();
     } catch {
       addToast("Erro ao criar deck", "error");
+    }
+  }
+
+  function startEditDeck(deck: Deck) {
+    setEditingDeckId(deck.id);
+    setEditDeckName(deck.name);
+    setEditDeckSubjectId(deck.subjectId ? String(deck.subjectId) : "");
+  }
+
+  async function updateDeck(e: FormEvent, id: number) {
+    e.preventDefault();
+    if (!editDeckName.trim()) return;
+    setEditDeckBusy(true);
+    try {
+      const updated = await api.patch<Deck>(`/api/decks/${id}`, {
+        name: editDeckName.trim(),
+        subjectId: editDeckSubjectId || null,
+      });
+      setDecks((prev) => prev.map((deck) => (deck.id === id ? updated : deck)));
+      setEditingDeckId(null);
+      addToast("Deck atualizado!", "success");
+    } catch {
+      addToast("Erro ao atualizar deck", "error");
+    } finally {
+      setEditDeckBusy(false);
     }
   }
 
@@ -118,30 +150,60 @@ export default function FlashcardsSection({
         <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
             <Card key={deck.id} className="hover-lift animate-fade-in-up">
-              <div className="flex items-start justify-between">
-                <p className="font-medium text-slate-200">{deck.name}</p>
-                <button
-                  onClick={() => removeDeck(deck.id)}
-                  className="rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400"
-                >
-                  🗑️
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">{deck.totalCards} card(s)</p>
-              <div className="mt-4 flex items-center justify-between">
-                {deck.dueCards > 0 ? (
-                  <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-300">
-                    {deck.dueCards} para revisar
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
-                    Em dia
-                  </span>
-                )}
-                <Button variant="ghost" onClick={() => setActiveDeck(deck)}>
-                  Abrir
-                </Button>
-              </div>
+              {editingDeckId === deck.id ? (
+                <form onSubmit={(e) => updateDeck(e, deck.id)} className="space-y-3">
+                  <Input value={editDeckName} onChange={(e) => setEditDeckName(e.target.value)} />
+                  <Select value={editDeckSubjectId} onChange={(e) => setEditDeckSubjectId(e.target.value)}>
+                    <option value="">Sem matéria</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.emoji} {s.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={editDeckBusy}>{editDeckBusy ? "Salvando..." : "Salvar"}</Button>
+                    <Button type="button" variant="ghost" onClick={() => setEditingDeckId(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium text-slate-200">{deck.name}</p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => startEditDeck(deck)}
+                        className="rounded-lg p-1.5 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => removeDeck(deck.id)}
+                        className="rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{deck.totalCards} card(s)</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    {deck.dueCards > 0 ? (
+                      <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+                        {deck.dueCards} para revisar
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
+                        Em dia
+                      </span>
+                    )}
+                    <Button variant="ghost" onClick={() => setActiveDeck(deck)}>
+                      Abrir
+                    </Button>
+                  </div>
+                </>
+              )}
             </Card>
           ))}
         </div>
@@ -167,6 +229,10 @@ function DeckStudyView({
   const [studyMode, setStudyMode] = useState(false);
   const [queue, setQueue] = useState<Flashcard[]>([]);
   const [flipped, setFlipped] = useState(false);
+  const [editingCardId, setEditingCardId] = useState<number | null>(null);
+  const [editFront, setEditFront] = useState("");
+  const [editBack, setEditBack] = useState("");
+  const [editCardBusy, setEditCardBusy] = useState(false);
 
   const subject = subjects.find((s) => s.id === deck.subjectId);
 
@@ -176,7 +242,7 @@ function DeckStudyView({
 
   useEffect(loadCards, [deck.id]);
 
-  async function createCard(e: React.FormEvent) {
+  async function createCard(e: FormEvent) {
     e.preventDefault();
     if (!front.trim() || !back.trim()) return;
     try {
@@ -188,6 +254,31 @@ function DeckStudyView({
       loadCards();
     } catch {
       addToast("Erro ao criar card", "error");
+    }
+  }
+
+  function startEditCard(card: Flashcard) {
+    setEditingCardId(card.id);
+    setEditFront(card.front);
+    setEditBack(card.back);
+  }
+
+  async function updateCard(e: FormEvent, id: number) {
+    e.preventDefault();
+    if (!editFront.trim() || !editBack.trim()) return;
+    setEditCardBusy(true);
+    try {
+      const updated = await api.patch<Flashcard>(`/api/flashcards/${id}`, {
+        front: editFront.trim(),
+        back: editBack.trim(),
+      });
+      setCards((prev) => prev.map((card) => (card.id === id ? updated : card)));
+      setEditingCardId(null);
+      addToast("Card atualizado!", "success");
+    } catch {
+      addToast("Erro ao atualizar card", "error");
+    } finally {
+      setEditCardBusy(false);
     }
   }
 
@@ -226,11 +317,7 @@ function DeckStudyView({
           ← Voltar ao deck
         </button>
         {!current ? (
-          <EmptyState
-          icon="🎉"
-          title="Revisão concluída"
-          description="Você terminou todos os cards desta sessão."
-        />
+          <EmptyState icon="🎉" title="Revisão concluída" description="Você terminou todos os cards desta sessão." />
         ) : (
           <div className="mx-auto max-w-xl">
             <p className="mb-4 text-center text-sm text-slate-500">{queue.length} card(s) restante(s)</p>
@@ -288,28 +375,47 @@ function DeckStudyView({
       )}
 
       {cards.length === 0 ? (
-        <EmptyState
-          icon="🗂️"
-          title="Nenhum card neste deck"
-          description="Adicione o primeiro card para começar a revisão."
-        />
+        <EmptyState icon="🗂️" title="Nenhum card neste deck" description="Adicione o primeiro card para começar a revisão." />
       ) : (
         <div className="stagger-children space-y-3">
           {cards.map((c) => (
-            <Card key={c.id} className="hover-lift flex items-center justify-between gap-4 animate-fade-in-up">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-200">{c.front}</p>
-                <p className="truncate text-xs text-slate-500">{c.back}</p>
-              </div>
-              <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">
-                Caixa {c.box}
-              </span>
-              <button
-                onClick={() => removeCard(c.id)}
-                className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400"
-              >
-                🗑️
-              </button>
+            <Card key={c.id} className="hover-lift animate-fade-in-up">
+              {editingCardId === c.id ? (
+                <form onSubmit={(e) => updateCard(e, c.id)} className="space-y-3">
+                  <Textarea value={editFront} onChange={(e) => setEditFront(e.target.value)} rows={2} />
+                  <Textarea value={editBack} onChange={(e) => setEditBack(e.target.value)} rows={2} />
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={editCardBusy}>{editCardBusy ? "Salvando..." : "Salvar"}</Button>
+                    <Button type="button" variant="ghost" onClick={() => setEditingCardId(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-200">{c.front}</p>
+                    <p className="truncate text-xs text-slate-500">{c.back}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">
+                    Caixa {c.box}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => startEditCard(c)}
+                      className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => removeCard(c.id)}
+                      className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-400"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              )}
             </Card>
           ))}
         </div>

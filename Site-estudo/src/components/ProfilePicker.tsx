@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 import { EMOJI_CHOICES, SUBJECT_COLORS } from "@/lib/types";
@@ -16,6 +16,11 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
   const [color, setColor] = useState(SUBJECT_COLORS[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmoji, setEditEmoji] = useState(EMOJI_CHOICES[0]);
+  const [editColor, setEditColor] = useState(SUBJECT_COLORS[0]);
+  const [editBusy, setEditBusy] = useState(false);
   const { addToast } = useToast();
 
   function selectProfile(id: number) {
@@ -23,7 +28,7 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
     router.push(`/painel?profile=${id}`);
   }
 
-  async function createProfile(e: React.FormEvent) {
+  async function createProfile(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
@@ -48,9 +53,49 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
     }
   }
 
+  function startEdit(profile: Profile) {
+    setEditingId(profile.id);
+    setEditName(profile.name);
+    setEditEmoji(profile.emoji);
+    setEditColor(profile.colorHex);
+  }
+
+  async function updateProfile(e: FormEvent, id: number) {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    setEditBusy(true);
+    try {
+      const updated = await api.patch<Profile>(`/api/profiles/${id}`, {
+        name: editName.trim(),
+        emoji: editEmoji,
+        colorHex: editColor,
+      });
+      setProfiles((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      setEditingId(null);
+      addToast("Perfil atualizado!", "success");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao atualizar perfil";
+      addToast(message, "error");
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  async function deleteProfile(id: number) {
+    if (!confirm("Remover este perfil?")) return;
+    try {
+      await api.del(`/api/profiles/${id}`);
+      setProfiles((prev) => prev.filter((p) => p.id !== id));
+      addToast("Perfil removido!", "success");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao remover perfil";
+      addToast(message, "error");
+    }
+  }
+
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md sm:p-8">
-      <div className="flex items-center justify-between">
+    <div className="glass-card rounded-3xl p-6 backdrop-blur-md sm:p-8">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           Quem vai estudar agora?
         </h2>
@@ -66,19 +111,91 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         {profiles.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => selectProfile(p.id)}
-            className="group flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06]"
-          >
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg transition group-hover:scale-105"
-              style={{ background: `${p.colorHex}26`, boxShadow: `0 8px 24px ${p.colorHex}33` }}
-            >
-              {p.emoji}
-            </div>
-            <span className="text-sm font-medium text-slate-200">{p.name}</span>
-          </button>
+          <div key={p.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+            {editingId === p.id ? (
+              <form onSubmit={(e) => updateProfile(e, p.id)} className="space-y-3 p-4">
+                <input
+                  autoFocus
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nome do perfil"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                />
+                <div className="flex flex-wrap gap-2">
+                  {EMOJI_CHOICES.map((em) => (
+                    <button
+                      type="button"
+                      key={em}
+                      onClick={() => setEditEmoji(em)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg border text-lg transition ${
+                        editEmoji === em ? "border-indigo-400 bg-indigo-500/20" : "border-white/10 bg-white/5"
+                      }`}
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SUBJECT_COLORS.map((c) => (
+                    <button
+                      type="button"
+                      key={c}
+                      onClick={() => setEditColor(c)}
+                      className={`h-8 w-8 rounded-full border-2 transition ${
+                        editColor === c ? "scale-110 border-white" : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" disabled={editBusy} className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-2 text-sm font-semibold text-white">
+                    {editBusy ? "Salvando..." : "Salvar"}
+                  </button>
+                  <button type="button" onClick={() => setEditingId(null)} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                onClick={() => selectProfile(p.id)}
+                className="group flex w-full flex-col items-center gap-3 p-5 text-center transition hover:-translate-y-1 hover:bg-white/[0.04]"
+              >
+                <div
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg transition group-hover:scale-105"
+                  style={{ background: `${p.colorHex}26`, boxShadow: `0 8px 24px ${p.colorHex}33` }}
+                >
+                  {p.emoji}
+                </div>
+                <span className="text-sm font-medium text-slate-200">{p.name}</span>
+              </button>
+            )}
+            {!editingId && (
+              <div className="flex items-center justify-center gap-2 border-t border-white/10 bg-black/10 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEdit(p);
+                  }}
+                  className="rounded-lg px-2.5 py-1.5 text-sm text-slate-300 transition hover:bg-white/5"
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void deleteProfile(p.id);
+                  }}
+                  className="rounded-lg px-2.5 py-1.5 text-sm text-rose-300 transition hover:bg-rose-500/10"
+                >
+                  🗑️
+                </button>
+              </div>
+            )}
+          </div>
         ))}
 
         {profiles.length === 0 && !creating && (
@@ -117,9 +234,7 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
                   key={em}
                   onClick={() => setEmoji(em)}
                   className={`flex h-9 w-9 items-center justify-center rounded-lg border text-lg transition ${
-                    emoji === em
-                      ? "border-indigo-400 bg-indigo-500/20"
-                      : "border-white/10 bg-white/5 hover:border-white/25"
+                    emoji === em ? "border-indigo-400 bg-indigo-500/20" : "border-white/10 bg-white/5 hover:border-white/25"
                   }`}
                 >
                   {em}
