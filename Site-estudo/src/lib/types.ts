@@ -89,6 +89,44 @@ export type CompareEntry = {
   tasksPending: number;
 };
 
+export type CoupleStreak = {
+  currentStreak: number;
+  longestStreak: number;
+  bothStudiedToday: boolean;
+};
+
+export type FlashcardErrorEntry = {
+  id: number;
+  flashcardId: number;
+  profileId: number;
+  partnerTip: string | null;
+  tipAuthorId: number | null;
+  createdAt: string;
+};
+
+export type Challenge = {
+  id: number;
+  challengerId: number;
+  challengedId: number;
+  description: string;
+  targetMinutes: number;
+  subjectId: number | null;
+  deadline: string;
+  status: string;
+  points: number;
+  createdAt: string;
+};
+
+export type StudyPresence = {
+  id?: number;
+  profileId: number;
+  isOnline: boolean;
+  isFocusing: boolean;
+  focusStartedAt?: string | null;
+  focusDuration?: number | null;
+  updatedAt?: string;
+};
+
 export const DAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export const SUBJECT_COLORS = [

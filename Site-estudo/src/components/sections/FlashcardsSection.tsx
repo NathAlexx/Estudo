@@ -97,6 +97,7 @@ export default function FlashcardsSection({
       <DeckStudyView
         deck={activeDeck}
         subjects={subjects}
+        profileId={profileId}
         onBack={() => {
           setActiveDeck(null);
           loadDecks();
@@ -215,10 +216,12 @@ export default function FlashcardsSection({
 function DeckStudyView({
   deck,
   subjects,
+  profileId,
   onBack,
 }: {
   deck: Deck;
   subjects: Subject[];
+  profileId: number;
   onBack: () => void;
 }) {
   const [cards, setCards] = useState<Flashcard[]>([]);
@@ -303,6 +306,10 @@ function DeckStudyView({
   async function rate(result: "again" | "good" | "easy") {
     const current = queue[0];
     if (!current) return;
+    if (result === "again") {
+      await api.post("/api/flashcard-errors", { flashcardId: current.id, profileId: profileId });
+      addToast("Card adicionado ao Banco de Erros", "success");
+    }
     await api.post(`/api/flashcards/${current.id}/review`, { result });
     setQueue((prev) => prev.slice(1));
     setFlipped(false);

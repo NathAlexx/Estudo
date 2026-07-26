@@ -99,3 +99,63 @@ export const planEntries = pgTable("plan_entries", {
   title: varchar("title", { length: 120 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const coupleStreaks = pgTable("couple_streaks", {
+  id: serial("id").primaryKey(),
+  profileId1: integer("profile_id_1")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  profileId2: integer("profile_id_2")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastStudiedTogether: date("last_studied_together"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const flashcardErrors = pgTable("flashcard_errors", {
+  id: serial("id").primaryKey(),
+  flashcardId: integer("flashcard_id")
+    .notNull()
+    .references(() => flashcards.id, { onDelete: "cascade" }),
+  profileId: integer("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  partnerTip: text("partner_tip"),
+  tipAuthorId: integer("tip_author_id").references(() => profiles.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const challenges = pgTable("challenges", {
+  id: serial("id").primaryKey(),
+  challengerId: integer("challenger_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  challengedId: integer("challenged_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  description: varchar("description", { length: 200 }).notNull(),
+  targetMinutes: integer("target_minutes").notNull(),
+  subjectId: integer("subject_id").references(() => subjects.id, {
+    onDelete: "set null",
+  }),
+  deadline: date("deadline").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  points: integer("points").notNull().default(10),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const studyPresence = pgTable("study_presence", {
+  id: serial("id").primaryKey(),
+  profileId: integer("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  isOnline: boolean("is_online").notNull().default(false),
+  isFocusing: boolean("is_focusing").notNull().default(false),
+  focusStartedAt: timestamp("focus_started_at"),
+  focusDuration: integer("focus_duration"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

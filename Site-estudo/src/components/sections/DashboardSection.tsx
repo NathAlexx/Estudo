@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { CompareEntry, Profile, Stats, Subject } from "@/lib/types";
 import { Card, SectionHeader } from "@/components/ui";
+import StudyRoom from "@/components/StudyRoom";
 
 const DAY_SHORT = ["D", "S", "T", "Q", "Q", "S", "S"];
 
@@ -17,6 +18,7 @@ export default function DashboardSection({
   const [stats, setStats] = useState<Stats | null>(null);
   const [compare, setCompare] = useState<CompareEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [streak, setStreak] = useState<{ currentStreak: number; longestStreak: number; bothStudiedToday: boolean } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -24,11 +26,13 @@ export default function DashboardSection({
     Promise.all([
       api.get<Stats>(`/api/stats?profileId=${profile.id}`),
       api.get<CompareEntry[]>("/api/stats/compare"),
+      api.get<{ currentStreak: number; longestStreak: number; bothStudiedToday: boolean }>(`/api/couple-streak?profileId1=${profile.id}&profileId2=${profile.id}`),
     ])
-      .then(([s, c]) => {
+      .then(([s, c, streakData]) => {
         if (!active) return;
         setStats(s);
         setCompare(c);
+        setStreak(streakData);
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -48,6 +52,8 @@ export default function DashboardSection({
         title={`Olá, ${profile.name} ${profile.emoji}`}
         subtitle="Aqui está o resumo dos seus estudos"
       />
+
+      <StudyRoom profiles={[profile]} currentProfileId={profile.id} />
 
       {loading || !stats ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -109,6 +115,24 @@ export default function DashboardSection({
           </div>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Streak de casal</p>
+                  <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+                    🔥 {streak?.currentStreak ?? 0} dias juntos
+                  </p>
+                </div>
+                <div className="text-sm text-slate-400">
+                  {streak?.bothStudiedToday ? (
+                    <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-emerald-300">Hoje vocês estudaram juntos!</span>
+                  ) : (
+                    <span className="rounded-full bg-white/5 px-3 py-1">Nenhum de vocês estudou hoje ainda 😴</span>
+                  )}
+                  <p className="mt-2">Recorde: {streak?.longestStreak ?? 0} dias</p>
+                </div>
+              </div>
+            </Card>
             <Card className="lg:col-span-2">
               <p className="mb-4 text-sm font-semibold text-white">Últimos 7 dias</p>
               <div className="flex h-40 items-end justify-between gap-2">

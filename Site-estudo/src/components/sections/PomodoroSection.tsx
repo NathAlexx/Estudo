@@ -96,13 +96,26 @@ export default function PomodoroSection({
       addToast("Defina um tempo de foco válido", "error");
       return;
     }
-    setRunning((r) => !r);
+    const nextRunning = !running;
+    setRunning(nextRunning);
+    api.post("/api/presence", {
+      profileId,
+      isOnline: true,
+      isFocusing: nextRunning,
+      focusStartedAt: new Date().toISOString(),
+      focusDuration: currentFocus,
+    }).catch(() => undefined);
   }
 
   function resetTimer() {
     setRunning(false);
     setMode("focus");
     setSecondsLeft(currentFocus * 60);
+    api.post("/api/presence", {
+      profileId,
+      isOnline: true,
+      isFocusing: false,
+    }).catch(() => undefined);
   }
 
   function selectPreset(p: (typeof PRESETS)[number]) {

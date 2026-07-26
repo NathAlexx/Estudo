@@ -9,17 +9,21 @@ import SubjectsSection from "@/components/sections/SubjectsSection";
 import TasksSection from "@/components/sections/TasksSection";
 import PomodoroSection from "@/components/sections/PomodoroSection";
 import FlashcardsSection from "@/components/sections/FlashcardsSection";
+import QuizSection from "@/components/sections/QuizSection";
 import PlanSection from "@/components/sections/PlanSection";
+import ChallengesSection from "@/components/sections/ChallengesSection";
 import CompareSection from "@/components/sections/CompareSection";
 
 const NAV_ITEMS = [
-  { key: "dashboard", label: "Dashboard", icon: "🏠" },
+  { key: "dashboard", label: "Dashboard", icon: "📊" },
   { key: "subjects", label: "Matérias", icon: "📚" },
-  { key: "tasks", label: "Tarefas", icon: "✅" },
+  { key: "tasks", label: "Tarefas", icon: "📝" },
   { key: "pomodoro", label: "Pomodoro", icon: "⏱️" },
   { key: "flashcards", label: "Flashcards", icon: "🧠" },
-  { key: "plan", label: "Plano semanal", icon: "🗓️" },
-  { key: "compare", label: "Modo casal", icon: "💛" },
+  { key: "quiz", label: "Quiz", icon: "🎯" },
+  { key: "plan", label: "Plano", icon: "📅" },
+  { key: "challenges", label: "Desafios", icon: "🏆" },
+  { key: "compare", label: "Comparar", icon: "💛" },
 ] as const;
 
 type SectionKey = (typeof NAV_ITEMS)[number]["key"];
@@ -70,6 +74,7 @@ export default function AppShell() {
   }, [profileId]);
 
   const profile = useMemo(() => profiles.find((p) => p.id === profileId) ?? null, [profiles, profileId]);
+  const partnerId = profiles.find((p) => p.id !== profile?.id)?.id;
 
   function switchProfile(id: number) {
     localStorage.setItem("studyorbit:profileId", String(id));
@@ -197,7 +202,9 @@ export default function AppShell() {
           {section === "tasks" && <TasksSection profileId={profile.id} subjects={subjects} />}
           {section === "pomodoro" && <PomodoroSection profileId={profile.id} subjects={subjects} />}
           {section === "flashcards" && <FlashcardsSection profileId={profile.id} subjects={subjects} />}
+          {section === "quiz" && <QuizSection partnerProfileId={partnerId} currentProfileId={profile.id} />}
           {section === "plan" && <PlanSection profileId={profile.id} subjects={subjects} />}
+          {section === "challenges" && <ChallengesSection profiles={profiles} currentProfileId={profile.id} subjects={subjects} />}
           {section === "compare" && <CompareSection />}
         </div>
       </main>
