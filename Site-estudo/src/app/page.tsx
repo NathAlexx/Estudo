@@ -1,71 +1,81 @@
-import { db } from "@/db";
-import { profiles } from "@/db/schema";
-import { asc } from "drizzle-orm";
-import ProfilePicker from "@/components/ProfilePicker";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function HomePage() {
-  const rows = await db.select().from(profiles).orderBy(asc(profiles.id));
-  const allProfiles = rows.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }));
+const FEATURES = [
+  {
+    icon: "⏱️",
+    title: "Pomodoro inteligente",
+    desc: "Ciclos de foco que registram automaticamente seu tempo de estudo por matéria.",
+  },
+  {
+    icon: "🧠",
+    title: "Flashcards com repetição espaçada",
+    desc: "Sistema Leitner para revisar só o que precisa, na hora certa.",
+  },
+  {
+    icon: "🏆",
+    title: "Modo casal",
+    desc: "Compare o progresso semanal de vocês dois e se motivem juntos.",
+  },
+];
+
+export default function LandingPage() {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-6 py-14 sm:px-8 sm:py-20">
-      <div className="aurora-orb aurora-orb-1" />
-      <div className="aurora-orb aurora-orb-2" />
-      <div className="aurora-orb aurora-orb-3" />
+    <main className="relative flex min-h-screen flex-col items-center overflow-hidden">
+      {/* Background aurora animado */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="aurora-orb aurora-orb-1" />
+        <div className="aurora-orb aurora-orb-2" />
+        <div className="aurora-orb aurora-orb-3" />
+      </div>
 
-      <div className="relative mx-auto flex max-w-6xl flex-col items-center text-center">
-        <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.25em] text-indigo-300 backdrop-blur">
-          Central de estudos do casal
-        </span>
-        <h1 className="font-[family-name:var(--font-display)] text-[clamp(2.2rem,6vw,3.8rem)] font-extrabold leading-[1.05] tracking-tight text-white">
-          O plano perfeito para estudar em dupla
-          <span className="mt-3 block text-gradient">mais leve, bonito e consistente</span>
-        </h1>
-        <p className="mt-5 max-w-3xl text-balance text-base text-slate-400 sm:text-lg">
-          Um painel único para organizar matérias, tarefas, sessões de pomodoro, flashcards e o
-          plano semanal — tudo com energia visual, animações suaves e motivação em tempo real.
-        </p>
+      {/* Grid sutil de fundo */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: "60px 60px",
+        }}
+      />
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-300">
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">⏱️ Pomodoro</span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">🧠 Flashcards</span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">💛 Modo casal</span>
+      {/* Conteúdo */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+        {/* Badge */}
+        <div
+          className={`mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-1.5 text-xs font-medium text-indigo-300 backdrop-blur-sm transition-all duration-700 ${
+            mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          }`}
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-400"></span>
+          </span>
+          Feito para casais que estudam juntos
         </div>
-      </div>
 
-      <div className="relative mx-auto mt-12 max-w-6xl">
-        <ProfilePicker initialProfiles={allProfiles} />
-      </div>
+        {/* Título principal */}
+        <h1
+          className={`mb-6 max-w-3xl font-[family-name:var(--font-sora)] text-5xl font-extrabold leading-tight tracking-tight text-white transition-all duration-700 delay-150 sm:text-6xl lg:text-7xl ${
+            mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
+        >
+          Estudar em dupla fica{" "}
+          <span className="text-gradient">mais fácil</span> e divertido
+        </h1>
 
-      <div className="relative mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-3">
-        {[
-          {
-            icon: "⏱️",
-            title: "Pomodoro inteligente",
-            desc: "Ciclos de foco que registram automaticamente seu tempo de estudo por matéria.",
-          },
-          {
-            icon: "🧠",
-            title: "Flashcards com repetição espaçada",
-            desc: "Sistema Leitner para revisar só o que precisa, na hora certa.",
-          },
-          {
-            icon: "🏆",
-            title: "Modo casal",
-            desc: "Compare o progresso semanal de vocês dois e se motivem juntos.",
-          },
-        ].map((f) => (
-          <div key={f.title} className="glass-card hover-lift panel-glow p-5 text-left">
-            <div className="text-2xl">{f.icon}</div>
-            <h3 className="mt-3 font-[family-name:var(--font-display)] text-sm font-semibold text-white">
-              {f.title}
-            </h3>
-            <p className="mt-1.5 text-sm text-slate-400">{f.desc}</p>
-          </div>
-        ))}
-      </div>
-    </main>
-  );
-}
+        {/* Subtítulo */}
+        <p
+          className={`mb-10 max-w-xl text-lg leading-relaxed text-slate-400 transition-all duration-700 delay-300 ${
+            mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
+        >
+          Central de estudos do casal. Organize

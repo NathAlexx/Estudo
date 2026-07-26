@@ -105,16 +105,10 @@ export default function AppShell() {
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="grid min-h-screen place-items-center px-6 text-center">
-        <div className="glass-card rounded-3xl px-8 py-10">
-          <div className="mx-auto orbit-loader" />
-          <p className="mt-5 text-slate-300">Ajustando o painel para o perfil selecionado...</p>
-        </div>
-      </div>
-    );
-  }
+<div className="flex min-h-screen flex-col items-center justify-center gap-4 text-slate-400">
+  <div className="orbit-loader" />
+  <p className="text-sm font-medium animate-pulse">Inicializando StudyOrbit...</p>
+</div>
 
   return (
     <div className="flex min-h-screen">
