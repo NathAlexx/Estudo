@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { Subject, Task } from "@/lib/types";
-import { Button, Card, EmptyState, Input, PriorityBadge, SectionHeader, Select } from "@/components/ui";
+import { Button, Card, Input, PriorityBadge, SectionHeader, Select } from "@/components/ui";
+import EmptyState from "@/components/EmptyState";
+import { SkeletonList } from "@/components/Skeleton";
+import { useToast } from "@/hooks/useToast";
 
 type Filter = "pending" | "completed" | "all";
 
@@ -24,6 +27,7 @@ export default function TasksSection({
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("media");
   const [busy, setBusy] = useState(false);
+  const { addToast } = useToast();
 
   function load() {
     setLoading(true);
@@ -52,20 +56,34 @@ export default function TasksSection({
       setSubjectId("");
       setPriority("media");
       setShowForm(false);
+      addToast("Tarefa salva!", "success");
       load();
+    } catch {
+      addToast("Erro ao salvar tarefa", "error");
     } finally {
       setBusy(false);
     }
   }
 
   async function toggleComplete(task: Task) {
-    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, completed: !t.completed } : t)));
-    await api.patch(`/api/tasks/${task.id}`, { completed: !task.completed });
+    const nextCompleted = !task.completed;
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, completed: nextCompleted } : t)));
+    try {
+      await api.patch(`/api/tasks/${task.id}`, { completed: nextCompleted });
+      addToast(nextCompleted ? "Tarefa concluída!" : "Tarefa reaberta!", "success");
+    } catch {
+      addToast("Erro ao atualizar tarefa", "error");
+    }
   }
 
   async function removeTask(id: number) {
     setTasks((prev) => prev.filter((t) => t.id !== id));
-    await api.del(`/api/tasks/${id}`);
+    try {
+      await api.del(`/api/tasks/${id}`);
+      addToast("Tarefa removida!", "success");
+    } catch {
+      addToast("Erro ao remover tarefa", "error");
+    }
   }
 
   const filtered = tasks.filter((t) => {
@@ -132,13 +150,14 @@ export default function TasksSection({
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-white/5" />
-          ))}
-        </div>
+        <SkeletonList count={4} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="✅" text="Nenhuma tarefa por aqui. Aproveite para descansar ou adicione algo novo!" />
+        <EmptyState
+          icon="📝"
+          title="Nenhuma tarefa ainda"
+          description="Adicione sua primeira tarefa para começar a organizar os estudos."
+          action={{ label: "Nova tarefa", onClick: () => setShowForm(true) }}
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map((task) => {

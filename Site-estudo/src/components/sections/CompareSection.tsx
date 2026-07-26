@@ -30,7 +30,11 @@ export default function CompareSection() {
           ))}
         </div>
       ) : data.length < 2 ? (
-        <EmptyState icon="👫" text="Crie os dois perfis (você e sua noiva) na tela inicial para habilitar a comparação." />
+        <EmptyState
+          icon="👫"
+          title="Faltam dois perfis"
+          description="Crie os dois perfis (você e sua noiva) na tela inicial para habilitar a comparação."
+        />
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2">

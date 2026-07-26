@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 import { EMOJI_CHOICES, SUBJECT_COLORS } from "@/lib/types";
+import { useToast } from "@/hooks/useToast";
 
 export default function ProfilePicker({ initialProfiles }: { initialProfiles: Profile[] }) {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
   const [color, setColor] = useState(SUBJECT_COLORS[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   function selectProfile(id: number) {
     localStorage.setItem("studyorbit:profileId", String(id));
@@ -35,9 +37,12 @@ export default function ProfilePicker({ initialProfiles }: { initialProfiles: Pr
       setProfiles((prev) => [...prev, created]);
       setName("");
       setCreating(false);
+      addToast("Perfil criado com sucesso!", "success");
       selectProfile(created.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar perfil");
+      const message = err instanceof Error ? err.message : "Erro ao criar perfil";
+      setError(message);
+      addToast(message, "error");
     } finally {
       setBusy(false);
     }

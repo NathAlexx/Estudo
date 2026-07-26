@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { EMOJI_CHOICES, SUBJECT_COLORS, type Subject } from "@/lib/types";
-import { Button, Card, EmptyState, Input, SectionHeader } from "@/components/ui";
+import { Button, Card, Input, SectionHeader } from "@/components/ui";
+import EmptyState from "@/components/EmptyState";
+import { SkeletonList } from "@/components/Skeleton";
+import { useToast } from "@/hooks/useToast";
 
 export default function SubjectsSection({
   profileId,
@@ -19,6 +22,7 @@ export default function SubjectsSection({
   const [emoji, setEmoji] = useState(EMOJI_CHOICES[0]);
   const [color, setColor] = useState(SUBJECT_COLORS[0]);
   const [busy, setBusy] = useState(false);
+  const { addToast } = useToast();
 
   async function createSubject(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +32,10 @@ export default function SubjectsSection({
       await api.post("/api/subjects", { profileId, name: name.trim(), emoji, colorHex: color });
       setName("");
       setShowForm(false);
+      addToast("Matéria criada com sucesso!", "success");
       onChange();
+    } catch {
+      addToast("Erro ao salvar matéria", "error");
     } finally {
       setBusy(false);
     }
@@ -36,8 +43,13 @@ export default function SubjectsSection({
 
   async function removeSubject(id: number) {
     if (!confirm("Remover esta matéria? Tarefas e decks vinculados perderão a referência.")) return;
-    await api.del(`/api/subjects/${id}`);
-    onChange();
+    try {
+      await api.del(`/api/subjects/${id}`);
+      addToast("Matéria removida!", "success");
+      onChange();
+    } catch {
+      addToast("Erro ao remover matéria", "error");
+    }
   }
 
   return (
@@ -98,7 +110,12 @@ export default function SubjectsSection({
       )}
 
       {subjects.length === 0 ? (
-        <EmptyState icon="📚" text="Nenhuma matéria cadastrada ainda. Crie a primeira para começar a organizar seus estudos." />
+        <EmptyState
+          icon="📚"
+          title="Nenhuma matéria"
+          description="Crie a primeira matéria para começar a organizar seus estudos."
+          action={{ label: "Nova matéria", onClick: () => setShowForm(true) }}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {subjects.map((s) => (

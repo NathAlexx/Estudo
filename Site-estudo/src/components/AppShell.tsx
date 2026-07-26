@@ -162,15 +162,17 @@ export default function AppShell() {
 
       {/* Main content */}
       <main className="min-w-0 flex-1 px-5 pb-16 pt-20 sm:px-8 lg:pt-8">
-        {section === "dashboard" && <DashboardSection profile={profile} subjects={subjects} />}
-        {section === "subjects" && (
-          <SubjectsSection profileId={profile.id} subjects={subjects} onChange={() => loadSubjects(profile.id)} />
-        )}
-        {section === "tasks" && <TasksSection profileId={profile.id} subjects={subjects} />}
-        {section === "pomodoro" && <PomodoroSection profileId={profile.id} subjects={subjects} />}
-        {section === "flashcards" && <FlashcardsSection profileId={profile.id} subjects={subjects} />}
-        {section === "plan" && <PlanSection profileId={profile.id} subjects={subjects} />}
-        {section === "compare" && <CompareSection />}
+        <div className="section-transition">
+          {section === "dashboard" && <DashboardSection profile={profile} subjects={subjects} />}
+          {section === "subjects" && (
+            <SubjectsSection profileId={profile.id} subjects={subjects} onChange={() => loadSubjects(profile.id)} />
+          )}
+          {section === "tasks" && <TasksSection profileId={profile.id} subjects={subjects} />}
+          {section === "pomodoro" && <PomodoroSection profileId={profile.id} subjects={subjects} />}
+          {section === "flashcards" && <FlashcardsSection profileId={profile.id} subjects={subjects} />}
+          {section === "plan" && <PlanSection profileId={profile.id} subjects={subjects} />}
+          {section === "compare" && <CompareSection />}
+        </div>
       </main>
     </div>
   );

@@ -54,11 +54,33 @@ export function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
-export function EmptyState({ icon, text }: { icon: string; text: string }) {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-14 text-center">
       <div className="text-3xl">{icon}</div>
-      <p className="mt-3 max-w-xs text-sm text-slate-500">{text}</p>
+      <h3 className="mt-3 text-lg font-semibold text-white/90">{title}</h3>
+      <p className="mt-2 max-w-xs text-sm text-slate-500">{description}</p>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="mt-4 rounded-xl bg-indigo-500/20 px-5 py-2.5 text-sm font-medium text-indigo-300 transition hover:bg-indigo-500/30"
+        >
+          {action.label}
+        </button>
+      )}
     </div>
   );
 }

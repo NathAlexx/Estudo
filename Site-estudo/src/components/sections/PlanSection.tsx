@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { DAY_LABELS, type PlanEntry, type Subject } from "@/lib/types";
 import { Button, Card, Input, SectionHeader, Select } from "@/components/ui";
+import EmptyState from "@/components/EmptyState";
+import { SkeletonList } from "@/components/Skeleton";
+import { useToast } from "@/hooks/useToast";
 
 export default function PlanSection({
   profileId,
@@ -19,31 +22,44 @@ export default function PlanSection({
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [subjectId, setSubjectId] = useState("");
   const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
 
   function load() {
-    api.get<PlanEntry[]>(`/api/plan?profileId=${profileId}`).then(setEntries);
+    setLoading(true);
+    api.get<PlanEntry[]>(`/api/plan?profileId=${profileId}`).then(setEntries).finally(() => setLoading(false));
   }
 
   useEffect(load, [profileId]);
 
   async function createEntry(e: React.FormEvent) {
     e.preventDefault();
-    await api.post("/api/plan", {
-      profileId,
-      dayOfWeek: Number(dayOfWeek),
-      startTime,
-      durationMinutes: Number(durationMinutes),
-      subjectId: subjectId || null,
-      title: title.trim() || null,
-    });
-    setTitle("");
-    setShowForm(false);
-    load();
+    try {
+      await api.post("/api/plan", {
+        profileId,
+        dayOfWeek: Number(dayOfWeek),
+        startTime,
+        durationMinutes: Number(durationMinutes),
+        subjectId: subjectId || null,
+        title: title.trim() || null,
+      });
+      setTitle("");
+      setShowForm(false);
+      addToast("Bloco de estudo salvo!", "success");
+      load();
+    } catch {
+      addToast("Erro ao salvar plano", "error");
+    }
   }
 
   async function removeEntry(id: number) {
-    await api.del(`/api/plan/${id}`);
-    load();
+    try {
+      await api.del(`/api/plan/${id}`);
+      addToast("Bloco removido!", "success");
+      load();
+    } catch {
+      addToast("Erro ao remover bloco", "error");
+    }
   }
 
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
@@ -94,8 +110,18 @@ export default function PlanSection({
         </Card>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-7">
-        {DAY_LABELS.map((label, dayIdx) => {
+      {loading ? (
+        <SkeletonList count={4} />
+      ) : entries.length === 0 ? (
+        <EmptyState
+          icon="📅"
+          title="Nenhum plano semanal"
+          description="Adicione blocos de estudo para montar sua rotina da semana."
+          action={{ label: "Novo bloco", onClick: () => setShowForm(true) }}
+        />
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-7">
+          {DAY_LABELS.map((label, dayIdx) => {
           const dayEntries = entries
             .filter((e) => e.dayOfWeek === dayIdx)
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -131,7 +157,8 @@ export default function PlanSection({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { Deck, Flashcard, Subject } from "@/lib/types";
-import { Button, Card, EmptyState, Input, SectionHeader, Select, Textarea } from "@/components/ui";
+import { Button, Card, Input, SectionHeader, Select, Textarea } from "@/components/ui";
+import EmptyState from "@/components/EmptyState";
+import { SkeletonList } from "@/components/Skeleton";
+import { useToast } from "@/hooks/useToast";
 
 export default function FlashcardsSection({
   profileId,
@@ -17,12 +20,15 @@ export default function FlashcardsSection({
   const [showDeckForm, setShowDeckForm] = useState(false);
   const [deckName, setDeckName] = useState("");
   const [deckSubjectId, setDeckSubjectId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
 
   function loadDecks() {
+    setLoading(true);
     api.get<Deck[]>(`/api/decks?profileId=${profileId}`).then((rows) => {
       setDecks(rows);
       setActiveDeck((prev) => (prev ? rows.find((d) => d.id === prev.id) ?? null : null));
-    });
+    }).finally(() => setLoading(false));
   }
 
   useEffect(loadDecks, [profileId]);
@@ -30,18 +36,28 @@ export default function FlashcardsSection({
   async function createDeck(e: React.FormEvent) {
     e.preventDefault();
     if (!deckName.trim()) return;
-    await api.post("/api/decks", { profileId, name: deckName.trim(), subjectId: deckSubjectId || null });
-    setDeckName("");
-    setDeckSubjectId("");
-    setShowDeckForm(false);
-    loadDecks();
+    try {
+      await api.post("/api/decks", { profileId, name: deckName.trim(), subjectId: deckSubjectId || null });
+      setDeckName("");
+      setDeckSubjectId("");
+      setShowDeckForm(false);
+      addToast("Deck criado com sucesso!", "success");
+      loadDecks();
+    } catch {
+      addToast("Erro ao criar deck", "error");
+    }
   }
 
   async function removeDeck(id: number) {
     if (!confirm("Remover este deck e todos os cards dele?")) return;
-    await api.del(`/api/decks/${id}`);
-    if (activeDeck?.id === id) setActiveDeck(null);
-    loadDecks();
+    try {
+      await api.del(`/api/decks/${id}`);
+      if (activeDeck?.id === id) setActiveDeck(null);
+      addToast("Deck removido!", "success");
+      loadDecks();
+    } catch {
+      addToast("Erro ao remover deck", "error");
+    }
   }
 
   if (activeDeck) {
@@ -89,8 +105,15 @@ export default function FlashcardsSection({
         </Card>
       )}
 
-      {decks.length === 0 ? (
-        <EmptyState icon="🧠" text="Nenhum deck ainda. Crie um para começar a revisar com flashcards." />
+      {loading ? (
+        <SkeletonList count={4} />
+      ) : decks.length === 0 ? (
+        <EmptyState
+          icon="🧠"
+          title="Nenhum deck de flashcards"
+          description="Crie um deck para começar a revisar com flashcards."
+          action={{ label: "Novo deck", onClick: () => setShowDeckForm(true) }}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
@@ -140,6 +163,7 @@ function DeckStudyView({
   const [showForm, setShowForm] = useState(false);
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
+  const { addToast } = useToast();
   const [studyMode, setStudyMode] = useState(false);
   const [queue, setQueue] = useState<Flashcard[]>([]);
   const [flipped, setFlipped] = useState(false);
@@ -155,16 +179,26 @@ function DeckStudyView({
   async function createCard(e: React.FormEvent) {
     e.preventDefault();
     if (!front.trim() || !back.trim()) return;
-    await api.post("/api/flashcards", { deckId: deck.id, front: front.trim(), back: back.trim() });
-    setFront("");
-    setBack("");
-    setShowForm(false);
-    loadCards();
+    try {
+      await api.post("/api/flashcards", { deckId: deck.id, front: front.trim(), back: back.trim() });
+      setFront("");
+      setBack("");
+      setShowForm(false);
+      addToast("Card criado com sucesso!", "success");
+      loadCards();
+    } catch {
+      addToast("Erro ao criar card", "error");
+    }
   }
 
   async function removeCard(id: number) {
-    await api.del(`/api/flashcards/${id}`);
-    loadCards();
+    try {
+      await api.del(`/api/flashcards/${id}`);
+      addToast("Card removido!", "success");
+      loadCards();
+    } catch {
+      addToast("Erro ao remover card", "error");
+    }
   }
 
   function startStudy() {
@@ -192,7 +226,11 @@ function DeckStudyView({
           ← Voltar ao deck
         </button>
         {!current ? (
-          <EmptyState icon="🎉" text="Revisão concluída! Você terminou todos os cards desta sessão." />
+          <EmptyState
+          icon="🎉"
+          title="Revisão concluída"
+          description="Você terminou todos os cards desta sessão."
+        />
         ) : (
           <div className="mx-auto max-w-xl">
             <p className="mb-4 text-center text-sm text-slate-500">{queue.length} card(s) restante(s)</p>
@@ -250,7 +288,11 @@ function DeckStudyView({
       )}
 
       {cards.length === 0 ? (
-        <EmptyState icon="🗂️" text="Nenhum card neste deck ainda." />
+        <EmptyState
+          icon="🗂️"
+          title="Nenhum card neste deck"
+          description="Adicione o primeiro card para começar a revisão."
+        />
       ) : (
         <div className="space-y-3">
           {cards.map((c) => (
