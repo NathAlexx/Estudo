@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { StudySession, Subject } from "@/lib/types";
 import { Button, Card, Select, SectionHeader } from "@/components/ui";
 import { useToast } from "@/hooks/useToast";
+import { useTimerSound } from "@/hooks/useTimerSound";
 
 const PRESETS = [
   { label: "15 / 3", focus: 15, rest: 3, desc: "Foco curto" },
@@ -33,6 +34,7 @@ export default function PomodoroSection({
   const [customRest, setCustomRest] = useState(5);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { addToast } = useToast();
+  const { playFocusEnd, playRestEnd } = useTimerSound();
 
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
 
@@ -66,6 +68,7 @@ export default function PomodoroSection({
   async function handleCycleEnd() {
     setRunning(false);
     if (mode === "focus") {
+      playFocusEnd();
       await api.post("/api/sessions", {
         profileId,
         subjectId: subjectId || null,
@@ -79,6 +82,7 @@ export default function PomodoroSection({
       setSecondsLeft(currentRest * 60);
       loadSessions();
     } else {
+      playRestEnd();
       addToast("Pausa terminou! Pronto para focar de novo? 🎯", "info");
       setFlash("⏰ Pausa terminou. Pronto para focar de novo?");
       setMode("focus");
