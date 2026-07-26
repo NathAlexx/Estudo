@@ -162,7 +162,7 @@ export default function AppShell() {
 
       {/* Main content */}
       <main className="min-w-0 flex-1 px-5 pb-16 pt-20 sm:px-8 lg:pt-8">
-        <div className="section-transition">
+        <div className="animate-slide-in">
           {section === "dashboard" && <DashboardSection profile={profile} subjects={subjects} />}
           {section === "subjects" && (
             <SubjectsSection profileId={profile.id} subjects={subjects} onChange={() => loadSubjects(profile.id)} />

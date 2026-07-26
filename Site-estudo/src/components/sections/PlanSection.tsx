@@ -120,7 +120,7 @@ export default function PlanSection({
           action={{ label: "Novo bloco", onClick: () => setShowForm(true) }}
         />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-7">
+        <div className="stagger-children grid gap-3 lg:grid-cols-7">
           {DAY_LABELS.map((label, dayIdx) => {
           const dayEntries = entries
             .filter((e) => e.dayOfWeek === dayIdx)
@@ -138,7 +138,7 @@ export default function PlanSection({
                 dayEntries.map((entry) => {
                   const subject = entry.subjectId ? subjectMap.get(entry.subjectId) : undefined;
                   return (
-                    <Card key={entry.id} className="!p-3">
+                    <Card key={entry.id} className="hover-lift !p-3 animate-fade-in-up">
                       <p className="text-xs font-semibold text-white">{entry.startTime}</p>
                       <p className="mt-1 truncate text-xs text-slate-300">
                         {subject ? `${subject.emoji} ${subject.name}` : entry.title || "Estudo"}

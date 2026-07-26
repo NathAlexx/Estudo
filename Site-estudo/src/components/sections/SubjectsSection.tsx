@@ -117,9 +117,9 @@ export default function SubjectsSection({
           action={{ label: "Nova matéria", onClick: () => setShowForm(true) }}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {subjects.map((s) => (
-            <Card key={s.id} className="flex items-center justify-between">
+            <Card key={s.id} className="hover-lift flex items-center justify-between animate-fade-in-up">
               <div className="flex items-center gap-3">
                 <div
                   className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"

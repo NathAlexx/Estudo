@@ -159,12 +159,12 @@ export default function TasksSection({
           action={{ label: "Nova tarefa", onClick: () => setShowForm(true) }}
         />
       ) : (
-        <div className="space-y-3">
+        <div className="stagger-children space-y-3">
           {filtered.map((task) => {
             const subject = task.subjectId ? subjectMap.get(task.subjectId) : undefined;
             const overdue = task.dueDate && task.dueDate < today && !task.completed;
             return (
-              <Card key={task.id} className="flex items-center gap-4">
+              <Card key={task.id} className="hover-lift flex items-center gap-4 animate-fade-in-up">
                 <button
                   onClick={() => toggleComplete(task)}
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${

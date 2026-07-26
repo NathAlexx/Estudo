@@ -115,9 +115,9 @@ export default function FlashcardsSection({
           action={{ label: "Novo deck", onClick: () => setShowDeckForm(true) }}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
-            <Card key={deck.id}>
+            <Card key={deck.id} className="hover-lift animate-fade-in-up">
               <div className="flex items-start justify-between">
                 <p className="font-medium text-slate-200">{deck.name}</p>
                 <button
@@ -294,9 +294,9 @@ function DeckStudyView({
           description="Adicione o primeiro card para começar a revisão."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="stagger-children space-y-3">
           {cards.map((c) => (
-            <Card key={c.id} className="flex items-center justify-between gap-4">
+            <Card key={c.id} className="hover-lift flex items-center justify-between gap-4 animate-fade-in-up">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-slate-200">{c.front}</p>
                 <p className="truncate text-xs text-slate-500">{c.back}</p>
