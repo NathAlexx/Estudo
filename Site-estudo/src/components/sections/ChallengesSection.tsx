@@ -87,8 +87,17 @@ export default function ChallengesSection({
       const result = await api.patch<{ completed: boolean; totalMinutes: number; description?: string }>(`/api/challenges/${id}`, { status: "check" });
       const label = result.completed ? "cumpriu" : "não cumpriu";
       addToast(`Resultado verificado: ${label}.`, result.completed ? "success" : "error");
+      const ch = challenges.find((c) => c.id === id);
       if (result.completed) {
         setWinner("Você");
+        if (ch) {
+          try {
+            await api.post("/api/points", { profileId: ch.challengedId, amount: ch.points });
+            addToast(`Você ganhou ${ch.points} pontos! 🎉`, "success");
+          } catch {
+            addToast("Erro ao creditar pontos", "error");
+          }
+        }
       } else {
         setWinner("Parceiro");
       }

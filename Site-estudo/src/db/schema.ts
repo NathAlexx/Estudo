@@ -159,3 +159,33 @@ export const studyPresence = pgTable("study_presence", {
   focusDuration: integer("focus_duration"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+// Pontos acumulados por perfil
+export const profilePoints = pgTable("profile_points", {
+  id: serial("id").primaryKey(),
+  profileId: integer("profile_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  totalPoints: integer("total_points").notNull().default(0),
+  spentPoints: integer("spent_points").notNull().default(0),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Catálogo de recompensas (criado pelos parceiros)
+export const rewards = pgTable("rewards", {
+  id: serial("id").primaryKey(),
+  creatorId: integer("creator_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 120 }).notNull(),
+  description: text("description"),
+  icon: varchar("icon", { length: 8 }).notNull().default("🎁"),
+  pointsCost: integer("points_cost").notNull().default(10),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Resgates de recompensas
+export const rewardRedemptions = pgTable("reward_redemptions", {
+  id: serial("id").primaryKey(),
+  rewardId: integer("reward_id").notNull().references(() => rewards.id, { onDelete: "cascade" }),
+  profileId: integer("profile_id").notNull().references(() => profiles.id, { onDelete: "cascade" }), // quem resgatou
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, fulfilled, cancelled
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  fulfilledAt: timestamp("fulfilled_at"),
+});

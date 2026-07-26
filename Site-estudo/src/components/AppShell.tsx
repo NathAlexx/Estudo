@@ -13,6 +13,7 @@ import QuizSection from "@/components/sections/QuizSection";
 import PlanSection from "@/components/sections/PlanSection";
 import ChallengesSection from "@/components/sections/ChallengesSection";
 import CompareSection from "@/components/sections/CompareSection";
+import RewardsSection from "@/components/sections/RewardsSection";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "📊" },
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { key: "quiz", label: "Quiz", icon: "🎯" },
   { key: "plan", label: "Plano", icon: "📅" },
   { key: "challenges", label: "Desafios", icon: "🏆" },
+  { key: "rewards", label: "Recompensas", icon: "🎁" },
   { key: "compare", label: "Comparar", icon: "💛" },
 ] as const;
 
@@ -205,6 +207,7 @@ export default function AppShell() {
           {section === "quiz" && <QuizSection partnerProfileId={partnerId} currentProfileId={profile.id} />}
           {section === "plan" && <PlanSection profileId={profile.id} subjects={subjects} />}
           {section === "challenges" && <ChallengesSection profiles={profiles} currentProfileId={profile.id} subjects={subjects} />}
+          {section === "rewards" && <RewardsSection profileId={profile.id} partnerProfileId={partnerId} profiles={profiles} />}
           {section === "compare" && <CompareSection />}
         </div>
       </main>
